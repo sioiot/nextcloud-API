@@ -1,9 +1,11 @@
 import sys
 import os
+import re
 import json
 import argparse
 from os.path import join
 from os.path import dirname
+
 
 sys.path.insert(0, join(dirname(__file__), 'src'))
 
@@ -27,14 +29,13 @@ class upload_file(object):
     def exec(self):
         try:
             nextcloud_client = NextCloud(endpoint=self.NEXTCLOUD_URL, user=self.NEXTCLOUD_USERNAME, password=self.NEXTCLOUD_PASSWORD, json_output=True)
-            users = nextcloud_client.get_users()
-            users_json=json.dumps(users.data)
-            users_str=json.loads(users_json)
-            users_list=list(users_str['users'])
-            users_name = users_list[1]
-            nextcloud_client.upload_file(users_name, self.NEXTCLOUD_LOCAL_FILEPATH, self.NEXTCLOUD_UPLOAD_FILEPATH)
+            ret = nextcloud_client.upload_file(self.NEXTCLOUD_USERNAME, self.NEXTCLOUD_LOCAL_FILEPATH, self.NEXTCLOUD_UPLOAD_FILEPATH)
+            if re.search('Status: Failed', str(ret)):
+                raise SystemExit(1)
+
         except IOError as e:
             print(e)
+            raise SystemExit(2)
     
     def  run(self):
         self.exec()
